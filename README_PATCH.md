@@ -1,38 +1,39 @@
-# Claw Machine Fixes Patch (v3)
+# Patch v4 — Tailwind & Supabase Browser Fix
 
-This patch archive contains files and configuration updates to fix the issues with the
-Telegram Gift Claw mini‑app project. These files implement the missing API routes,
-catalog page, bootstrap handler and Stars integration, and ensure that they run
-on the Node.js runtime with dynamic rendering disabled on Vercel. It also sets
-up TypeScript path aliases via `tsconfig.json` so that imports such as `@/lib/*`
-work correctly.
+This patch adds Tailwind as a PostCSS plugin and introduces a separate Supabase client for the browser. It also provides an optional dev‑mode to preview the app outside Telegram. Follow these steps after applying the patch.
 
-## Contents
+## 1. Tailwind configuration (no CDN)
 
-| Path | Description |
-| --- | --- |
-| `lib/supabase.ts` | Helper functions to create anonymous and service Supabase clients. |
-| `lib/telegram.ts` | Functions to verify Telegram WebApp `initData` and extract the user. |
-| `app/api/catalog/route.ts` | Server route that returns the catalog of available items from the `catalog_view`. |
-| `app/api/app/bootstrap/route.ts` | Server route that validates `initData`, upserts users and returns the price per play. |
-| `app/api/payments/stars/create-invoice/route.ts` | Server route to create a Stars invoice via the Telegram Bot API. |
-| `app/api/tg/webhook/route.ts` | Server route to handle Telegram bot webhooks and record successful payments. |
-| `app/catalog/page.tsx` | A page that fetches the catalog from the API and renders a grid of items. |
-| `tsconfig.json` | Configuration enabling `@/*` import aliases. |
+- **Remove** any `<script src="https://cdn.tailwindcss.com">` from your React/Next pages or layout. Tailwind should not be loaded from a CDN in production.
+- Install Tailwind via npm (already in your `package.json` devDependencies in this patch). Make sure to run `npm install` or `pnpm install`.
+- Use `tailwind.config.ts` and `postcss.config.js` from this patch. The build will automatically pick them up.
+- Include the global CSS file (`app/globals.css`) in your `app/layout.tsx`:
+  ```tsx
+  import './globals.css';
+  export default function RootLayout({ children }: { children: React.ReactNode }) {
+    return (<html lang="en"><body>{children}</body></html>);
+  }
+  ```
 
-All API routes specify `runtime = 'nodejs'` and `dynamic = 'force-dynamic'` to ensure
-they run in the Node.js runtime on Vercel and are not statically cached.
+## 2. Supabase browser client
 
-## Installation
+- Use the provided `lib/supabase-browser.ts` in any client component (files with `'use client'`). It reads `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- **Do not** import `supabaseService` on the client; that's only for server code.
 
-1. Unzip this archive into the root of your Next.js project. Ensure that the
-   nested directories (`lib/` and `app/`) merge with the existing ones.
-2. Commit the changes to your repository and redeploy the project on Vercel.
-3. Verify that the routes `/api/catalog` and `/api/app/bootstrap` return data
-   without errors. The page `/catalog` should display the available prizes.
-4. Check that your environment variables are correctly set in Vercel. See the
-   project documentation for required variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`,
-   `SUPABASE_SERVICE_ROLE`, `APP_BASE_URL`, `TELEGRAM_BOT_TOKEN`,
-   `TELEGRAM_BOT_SECRET`, `TELEGRAM_STARS_PROVIDER_TOKEN`).
-5. Optionally add `NEXT_PUBLIC_DEV_MODE=1` to your Vercel environment if you
-   want to test the app outside of Telegram using the `?dev=1` URL parameter.
+## 3. Environment variables
+
+Add these **public** variables alongside your existing Supabase variables in Vercel (Production & Preview):
+```
+NEXT_PUBLIC_SUPABASE_URL=<same as SUPABASE_URL>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<same as SUPABASE_ANON_KEY>
+```
+Keep your server variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE`) unchanged. Also set `NEXT_PUBLIC_DEV_MODE=1` if you want to test outside Telegram using `?dev=1`.
+
+## 4. What's included
+
+- `tailwind.config.ts` — default Tailwind config.
+- `postcss.config.js` — config for PostCSS with Tailwind.
+- `app/globals.css` — imports Tailwind base, components and utilities; you can add custom styles here.
+- `lib/supabase-browser.ts` — browser client setup.
+
+After unzipping this patch, commit and redeploy. Tailwind will compile properly and the Supabase client in the browser will use the correct keys.
