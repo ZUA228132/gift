@@ -1,0 +1,5 @@
+{
+  "name": "Gemini Claw Machine",
+  "description": "A fun, interactive claw machine game where you can grab toys and learn fun facts about them using the Gemini API.",
+  "requestFramePermissions": []
+}
