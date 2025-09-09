@@ -1,7 +1,12 @@
+// lib/telegram.ts
 import crypto from 'crypto';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 
+/**
+ * Verifies the signature contained in Telegram WebApp initData.
+ * @param initData the raw initData string from Telegram.WebApp.initData
+ */
 export function verifyInitData(initData: string): boolean {
   try {
     if (!initData) return false;
@@ -12,8 +17,10 @@ export function verifyInitData(initData: string): boolean {
       .map(([k, v]) => `${k}=${v}`)
       .sort()
       .join('\n');
-
-    const secret = crypto.createHmac('sha256', 'WebAppData').update(BOT_TOKEN).digest();
+    const secret = crypto
+      .createHmac('sha256', 'WebAppData')
+      .update(BOT_TOKEN)
+      .digest();
     const computed = crypto.createHmac('sha256', secret).update(data).digest('hex');
     return computed === hash;
   } catch {
@@ -21,6 +28,9 @@ export function verifyInitData(initData: string): boolean {
   }
 }
 
+/**
+ * Parses the user object from initData.
+ */
 export function getUserFromInitData(initData: string):
   | { id: number; username?: string; first_name?: string; last_name?: string }
   | null {

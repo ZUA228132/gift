@@ -1,3 +1,6 @@
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 import { NextRequest } from 'next/server';
 import { supabaseService } from '@/lib/supabase';
 
@@ -18,18 +21,22 @@ export async function POST(req: NextRequest) {
     const chargeId = String(sp.telegram_payment_charge_id ?? body?.update_id);
     const amount = Number(sp.total_amount ?? 0);
 
-    await sb.from('payments').upsert({
-      user_id: uid,
-      external_id: chargeId,
-      amount,
-      provider: 'stars',
-      status: 'paid',
-      payload: body,
-    }, { onConflict: 'external_id' });
+    await sb.from('payments').upsert(
+      {
+        user_id: uid,
+        external_id: chargeId,
+        amount,
+        provider: 'stars',
+        status: 'paid',
+        payload: body,
+      },
+      { onConflict: 'external_id' }
+    );
 
     return Response.json({ ok: true });
   }
 
+  // optional: log other updates
   await sb.from('imports').insert({ source: 'tg_update', status: 'ok', stats_json: body }).select();
   return Response.json({ ok: true });
 }

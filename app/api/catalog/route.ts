@@ -1,3 +1,6 @@
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 import { supabaseService } from '@/lib/supabase';
 
 export async function GET() {

@@ -1,3 +1,6 @@
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 import { supabaseService } from '@/lib/supabase';
 import { verifyInitData, getUserFromInitData } from '@/lib/telegram';
 
@@ -15,15 +18,22 @@ export async function POST(req: Request) {
       const u = getUserFromInitData(initData) || (dev ? { id: 12345, username: 'dev_user' } : null);
       if (u) {
         userId = String(u.id);
-        await sb.from('users').upsert({
-          tg_user_id: userId,
-          username: u.username || null,
-        }, { onConflict: 'tg_user_id' });
+        await sb.from('users').upsert(
+          {
+            tg_user_id: userId,
+            username: u.username || null,
+          },
+          { onConflict: 'tg_user_id' }
+        );
       }
     }
 
     let price = 25;
-    const { data: s } = await sb.from('settings').select('value_json').eq('key', 'price_per_play').maybeSingle();
+    const { data: s } = await sb
+      .from('settings')
+      .select('value_json')
+      .eq('key', 'price_per_play')
+      .maybeSingle();
     if (s?.value_json) price = Number(s.value_json) || 25;
 
     return Response.json({ ok: true, verified, userId, pricePerPlay: price });

@@ -1,59 +1,38 @@
-# Patch: Telegram Gifts Claw — missing routes & dev-mode
+# Claw Machine Fixes Patch (v3)
 
-This patch adds the missing routes and pages so that:
-- `/api/catalog` returns the prize list from `catalog_view`
-- `/catalog` renders the catalog UI
-- `/api/app/bootstrap` validates Telegram initData (or allows dev fallback)
-- (Optionally) Stars: `/api/payments/stars/create-invoice`
-- Telegram webhook: `/api/tg/webhook`
+This patch archive contains files and configuration updates to fix the issues with the
+Telegram Gift Claw mini‑app project. These files implement the missing API routes,
+catalog page, bootstrap handler and Stars integration, and ensure that they run
+on the Node.js runtime with dynamic rendering disabled on Vercel. It also sets
+up TypeScript path aliases via `tsconfig.json` so that imports such as `@/lib/*`
+work correctly.
 
-It also documents minimal env vars.
+## Contents
 
-## What to do
+| Path | Description |
+| --- | --- |
+| `lib/supabase.ts` | Helper functions to create anonymous and service Supabase clients. |
+| `lib/telegram.ts` | Functions to verify Telegram WebApp `initData` and extract the user. |
+| `app/api/catalog/route.ts` | Server route that returns the catalog of available items from the `catalog_view`. |
+| `app/api/app/bootstrap/route.ts` | Server route that validates `initData`, upserts users and returns the price per play. |
+| `app/api/payments/stars/create-invoice/route.ts` | Server route to create a Stars invoice via the Telegram Bot API. |
+| `app/api/tg/webhook/route.ts` | Server route to handle Telegram bot webhooks and record successful payments. |
+| `app/catalog/page.tsx` | A page that fetches the catalog from the API and renders a grid of items. |
+| `tsconfig.json` | Configuration enabling `@/*` import aliases. |
 
-1. Unzip this archive into the root of your Next.js **App Router** project.
-   - It will create/overwrite the `app/api/...`, `app/catalog/`, and `lib/` files shown below.
-2. Ensure dependencies in `package.json` (add if missing):
-   ```jsonc
-   {
-     "dependencies": {
-       "@supabase/supabase-js": "^2.45.0",
-       "@telegram-apps/sdk": "^1.0.0",
-       "clsx": "^2.1.1"
-     }
-   }
-   ```
-3. Set env on Vercel (Production/Preview/Dev):
-   ```
-   SUPABASE_URL=...
-   SUPABASE_ANON_KEY=...
-   SUPABASE_SERVICE_ROLE=...
-   APP_BASE_URL=https://<your>.vercel.app
+All API routes specify `runtime = 'nodejs'` and `dynamic = 'force-dynamic'` to ensure
+they run in the Node.js runtime on Vercel and are not statically cached.
 
-   JWT_SECRET=...
-   TELEGRAM_BOT_SECRET=...
+## Installation
 
-   TELEGRAM_BOT_TOKEN=...
-   TELEGRAM_BOT_USERNAME=@your_bot
-   TELEGRAM_MINIAPP_BOT_USERNAME=@your_bot
-   TELEGRAM_STARS_PROVIDER_TOKEN=...
-
-   NEXT_PUBLIC_DEV_MODE=1  # optional, to preview outside Telegram with ?dev=1
-   ```
-
-4. Deploy. Then set webhook (replace tokens/secrets):
-   ```bash
-   curl -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook"      -H "Content-Type: application/json"      -d '{"url":"'$APP_BASE_URL'/api/tg/webhook","secret_token":"'$TELEGRAM_BOT_SECRET'"}'
-   ```
-
-## Files added by this patch
-
-- `lib/supabase.ts`
-- `lib/telegram.ts`
-- `app/api/catalog/route.ts`
-- `app/catalog/page.tsx`
-- `app/api/app/bootstrap/route.ts`
-- `app/api/payments/stars/create-invoice/route.ts`
-- `app/api/tg/webhook/route.ts`
-
-All files are server-safe and require Node runtime (Next.js default).
+1. Unzip this archive into the root of your Next.js project. Ensure that the
+   nested directories (`lib/` and `app/`) merge with the existing ones.
+2. Commit the changes to your repository and redeploy the project on Vercel.
+3. Verify that the routes `/api/catalog` and `/api/app/bootstrap` return data
+   without errors. The page `/catalog` should display the available prizes.
+4. Check that your environment variables are correctly set in Vercel. See the
+   project documentation for required variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+   `SUPABASE_SERVICE_ROLE`, `APP_BASE_URL`, `TELEGRAM_BOT_TOKEN`,
+   `TELEGRAM_BOT_SECRET`, `TELEGRAM_STARS_PROVIDER_TOKEN`).
+5. Optionally add `NEXT_PUBLIC_DEV_MODE=1` to your Vercel environment if you
+   want to test the app outside of Telegram using the `?dev=1` URL parameter.
